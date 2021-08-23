@@ -1,0 +1,158 @@
+{
+  "description": "A New Flow",
+  "states": [
+    {
+      "name": "Trigger",
+      "type": "trigger",
+      "transitions": [
+        {
+          "next": "InitializeSession",
+          "event": "incomingMessage"
+        },
+        {
+          "event": "incomingCall"
+        },
+        {
+          "event": "incomingRequest"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": 30,
+          "y": -480
+        }
+      }
+    },
+    {
+      "name": "SetUserreplyVar",
+      "type": "set-variables",
+      "transitions": [
+        {
+          "next": "HandleInput",
+          "event": "next"
+        }
+      ],
+      "properties": {
+        "variables": [
+          {
+            "value": "{{widgets.GatherUserReply.inbound.Body}}",
+            "key": "body"
+          }
+        ],
+        "offset": {
+          "x": 410,
+          "y": 480
+        }
+      }
+    },
+    {
+      "name": "GatherUserReply",
+      "type": "send-and-wait-for-reply",
+      "transitions": [
+        {
+          "next": "SetUserreplyVar",
+          "event": "incomingMessage"
+        },
+        {
+          "event": "timeout"
+        },
+        {
+          "event": "deliveryFailure"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": -210,
+          "y": 470
+        },
+        "service": "{{trigger.message.InstanceSid}}",
+        "channel": "{{trigger.message.ChannelSid}}",
+        "from": "{{flow.channel.address}}",
+        "body": "{{widgets.HandleInput.parsed.response}}",
+        "timeout": "3600"
+      }
+    },
+    {
+      "name": "SetInitVars",
+      "type": "set-variables",
+      "transitions": [
+        {
+          "next": "HandleInput",
+          "event": "next"
+        }
+      ],
+      "properties": {
+        "variables": [
+          {
+            "value": "{{widgets.InitializeSession.parsed.sessionId}}",
+            "key": "sessionId"
+          },
+          {
+            "value": "{{trigger.message.Body}}",
+            "key": "body"
+          }
+        ],
+        "offset": {
+          "x": 50,
+          "y": -30
+        }
+      }
+    },
+    {
+      "name": "InitializeSession",
+      "type": "run-function",
+      "transitions": [
+        {
+          "next": "SetInitVars",
+          "event": "success"
+        },
+        {
+          "event": "fail"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": 60,
+          "y": -280
+        }
+      }
+    },
+    {
+      "name": "HandleInput",
+      "type": "run-function",
+      "transitions": [
+        {
+          "next": "GatherUserReply",
+          "event": "success"
+        },
+        {
+          "event": "fail"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": 70,
+          "y": 230
+        },
+        "parameters": [
+          {
+            "value": "{{flow.variables.sessionId}}",
+            "key": "sessionId"
+          },
+          {
+            "value": "{{flow.variables.body}}",
+            "key": "body"
+          },
+          {
+            "value": "{{trigger.message.From}}",
+            "key": "number"
+          }
+        ]
+      }
+    }
+  ],
+  "initial_state": "Trigger",
+  "flags": {
+    "allow_concurrent_calls": true
+  }
+}
